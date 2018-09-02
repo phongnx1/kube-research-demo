@@ -1,0 +1,57 @@
+# apiVersion: apps/v1beta2 #for k8s versions before 1.9.0 use apps/v1beta2
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: wordpress-deployment
+  labels:
+    app: wordpress-server
+spec:
+  # replicasets
+  replicas: 3
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  # pod templates
+  template:
+    metadata:
+      labels:
+        app: wordpress-server
+    spec:
+      containers:
+      - name: wordpress
+        image: wordpress:latest
+        imagePullPolicy: "Always"
+        ports:
+          - containerPort: 80
+        volumeMounts:
+        - mountPath: /html/var/www
+          name: source-code
+        env:
+        - name: WORDPRESS_DB_HOST
+          value: 150.95.147.13:6603
+        - name: WORDPRESS_DB_USER
+          value: wordpress
+        - name: WORDPRESS_DB_PASSWORD
+          value: mypass1!
+      volumes:
+      - name: source-code
+        hostPath:
+          path: /var/www
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wordpress-service
+  labels:
+    app: wordpress-server
+spec:
+  ports:
+  - port: 80
+    targetPort: 80
+    nodePort: 30020
+  selector:
+    app: wordpress-server
+  type: NodePort
